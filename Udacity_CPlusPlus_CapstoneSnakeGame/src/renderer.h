@@ -2,7 +2,9 @@
 #define RENDERER_H
 
 #include "SDL.h"
+#include "mouse.h"
 #include "snake.h"
+#include <SDL_ttf.h>
 #include <vector>
 
 class Renderer {
@@ -11,7 +13,7 @@ public:
            const std::size_t grid_width, const std::size_t grid_height);
   ~Renderer();
 
-  void Render(Snake const snake, SDL_Point const &food);
+  void Render(Snake const snake, Mouse const mouse, SDL_Point const &food);
   void UpdateWindowTitle(int score, int fps);
 
 private:

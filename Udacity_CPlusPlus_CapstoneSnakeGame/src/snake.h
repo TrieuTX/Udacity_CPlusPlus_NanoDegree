@@ -13,7 +13,6 @@ public:
         head_x(grid_width / 2), head_y(grid_height / 2) {}
 
   void Update();
-
   void GrowBody();
   bool SnakeCell(int x, int y);
 
