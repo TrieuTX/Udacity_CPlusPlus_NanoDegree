@@ -1,3 +1,0 @@
-/mnt/d/Ubuntu/Udacity_C++/Udacity_CPlusPlus_CapstoneSnakeGame/build/CMakeFiles/SnakeGame.dir
-/mnt/d/Ubuntu/Udacity_C++/Udacity_CPlusPlus_CapstoneSnakeGame/build/CMakeFiles/edit_cache.dir
-/mnt/d/Ubuntu/Udacity_C++/Udacity_CPlusPlus_CapstoneSnakeGame/build/CMakeFiles/rebuild_cache.dir

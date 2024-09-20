@@ -3,8 +3,9 @@
 #include <iostream>
 
 Game::Game(std::size_t grid_width, std::size_t grid_height)
-    : snake(grid_width, grid_height), mouse(grid_width, grid_height),
-      engine(dev()), random_w(1, static_cast<int>(grid_width - 2)),
+    : snake(std::make_unique<Snake>(grid_width, grid_height)),
+      mouse(std::make_unique<Mouse>(grid_width, grid_height)), engine(dev()),
+      random_w(1, static_cast<int>(grid_width - 2)),
       random_h(1, static_cast<int>(grid_height - 2)), kGridWidth(grid_width),
       kGridHeight(grid_height) {
   PlaceFood();
@@ -31,10 +32,10 @@ void Game::Run(Controller const &controller, Renderer &renderer,
     frame_start = SDL_GetTicks();
 
     // Input, Update, Render - the main game loop.
-    controller.HandleInput(running, snake);
+    controller.HandleInput(running, *snake);
     Update();
-    renderer.Render(snake, mouse, food);
-    if (!snake.alive) {
+    renderer.Render(*snake, *mouse, food);
+    if (!snake->IsAlive()) {
       // Auto quit game when snake die
       running = false;
     }
@@ -70,13 +71,13 @@ void Game::PlaceFood() {
     y = random_h(engine);
     // Check that the location is not occupied by a snake item before placing
     // food.
-    if (!mouse.MouseCell(x, y) && !snake.SnakeCell(x, y)) {
+    if (!mouse->ObjectCell(x, y) && !snake->ObjectCell(x, y)) {
       food.x = x;
       food.y = y;
       std::cout << "NewFood: " << x << " " << y << std::endl;
       {
-        int new_x = static_cast<int>(mouse.positionX);
-        int new_y = static_cast<int>(mouse.positionY);
+        int new_x = static_cast<int>(mouse->GetHeadX());
+        int new_y = static_cast<int>(mouse->GetHeadY());
 
         SDL_Point start{new_x, new_y};
         std::cout << "Mouse A* search: " << std::endl;
@@ -89,32 +90,33 @@ void Game::PlaceFood() {
 
 void Game::NewMouse() {
 
-  mouse.UpdatePosition(random_w(engine), random_h(engine));
-  mouse.alive = true;
-  std::cout << "New Mouse: " << mouse.positionX << " " << mouse.positionY
+  mouse->UpdatePosition(random_w(engine), random_h(engine));
+  mouse->setAlive(true);
+  std::cout << "New Mouse: " << mouse->GetHeadX() << " " << mouse->GetHeadY()
             << std::endl;
 }
 
 void Game::Update() {
   std::lock_guard<std::mutex> lock(mouse_mutex); // Lock mutex for thread
   // safety
-  if (!snake.alive)
+  if (!snake->IsAlive())
     return;
 
-  snake.Update();
+  snake->Update();
 
-  int new_x = static_cast<int>(snake.head_x);
-  int new_y = static_cast<int>(snake.head_y);
+  int new_x = snake->GetHeadX();
+  int new_y = snake->GetHeadY();
   if (new_x == 0 || new_x == static_cast<int>(kGridWidth - 1) || new_y == 0 ||
       new_y == static_cast<int>(kGridHeight - 1)) {
-    snake.alive = false;
+    snake->setAlive(false);
   }
   // Check if snake eat mouse
-  if (mouse.alive && mouse.positionX == new_x && mouse.positionY == new_y) {
+  if (mouse->IsAlive() && mouse->GetHeadX() == new_x &&
+      mouse->GetHeadY() == new_y) {
     std::cout << "Snake eat Mouse" << std::endl;
     score += 10;
-    snake.GrowBody();
-    mouse.alive = false;
+    snake->GrowBody();
+    mouse->setAlive(false);
   }
 
   // Check if there's food over here
@@ -123,13 +125,13 @@ void Game::Update() {
     score++;
     PlaceFood();
     // Grow snake and increase speed.
-    snake.GrowBody();
-    snake.speed += 0.02;
+    snake->GrowBody();
+    snake->speed += 0.02;
   }
 }
 
 int Game::GetScore() const { return score; }
-int Game::GetSize() const { return snake.size; }
+int Game::GetSize() const { return snake->size; }
 
 void Game::AutoRunMouse() {
   while (auto_running_mouse) {
@@ -138,11 +140,11 @@ void Game::AutoRunMouse() {
         std::chrono::milliseconds(500)); // mouse delay movement
     std::lock_guard<std::mutex> lock(
         mouse_mutex); // Lock mutex for thread safety
-    if (!mouse.alive) {
-      mouse.NewMouse();
+    if (!mouse->IsAlive()) {
+      mouse->NewMouse();
       {
-        int new_x = static_cast<int>(mouse.positionX);
-        int new_y = static_cast<int>(mouse.positionY);
+        int new_x = static_cast<int>(mouse->GetHeadX());
+        int new_y = static_cast<int>(mouse->GetHeadY());
 
         SDL_Point start{new_x, new_y};
         std::cout << "Mouse A* search: " << std::endl;
@@ -151,18 +153,17 @@ void Game::AutoRunMouse() {
     }
     // Calculate the path to the food using A* and move the mouse
     if (!mouseASearchPath.empty()) {
-      mouse.positionX = mouseASearchPath[0].x;
-      mouse.positionY = mouseASearchPath[0].y;
+      mouse->SetHead(mouseASearchPath[0].x, mouseASearchPath[0].y);
       std::cout << "Mouse go to position: " << mouseASearchPath[0].x << " "
                 << mouseASearchPath[0].y << " Food position: " << food.x << " "
                 << food.y << std::endl;
       mouseASearchPath.erase(mouseASearchPath.begin());
 
       // check mouse eat food
-      if (food.x == static_cast<int>(mouse.positionX) &&
-          food.y == static_cast<int>(mouse.positionY)) {
-        std::cout << "Mouse eat food at: " << mouse.positionX << " "
-                  << mouse.positionY << std::endl;
+      if (food.x == static_cast<int>(mouse->GetHeadX()) &&
+          food.y == static_cast<int>(mouse->GetHeadY())) {
+        std::cout << "Mouse eat food at: " << mouse->GetHeadX() << " "
+                  << mouse->GetHeadY() << std::endl;
         PlaceFood();
         score -= 10;
       }

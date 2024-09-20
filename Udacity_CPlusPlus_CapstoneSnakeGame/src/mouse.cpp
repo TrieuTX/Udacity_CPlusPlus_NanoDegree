@@ -2,16 +2,16 @@
 #include <cmath>
 #include <iostream>
 
-bool Mouse::MouseCell(int x, int y) {
-  if (x == static_cast<int>(positionX) && y == static_cast<int>(positionY)) {
+bool Mouse::ObjectCell(int x, int y) {
+  if (x == static_cast<int>(head_x) && y == static_cast<int>(head_y)) {
     return true;
   }
   return false;
 }
 
 void Mouse::UpdatePosition(int x, int y) {
-  positionX = x;
-  positionY = y;
+  head_x = x;
+  head_y = y;
 }
 
 int Mouse::randomPosition(int lower, int upper) {
@@ -31,5 +31,5 @@ void Mouse::NewMouse() {
   UpdatePosition(randomPosition(1, static_cast<int>(grid_width - 2)),
                  randomPosition(1, static_cast<int>(grid_height - 2)));
   alive = true;
-  std::cout << "New Mouse: " << positionX << " " << positionY << std::endl;
+  std::cout << "New Mouse: " << head_x << " " << head_y << std::endl;
 }

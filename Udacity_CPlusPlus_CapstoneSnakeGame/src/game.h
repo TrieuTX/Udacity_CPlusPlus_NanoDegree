@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <map>
 #include <math.h>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <random>
@@ -29,8 +30,8 @@ public:
   int GetSize() const;
 
 private:
-  Snake snake;
-  Mouse mouse;
+  std::unique_ptr<Snake> snake;
+  std::unique_ptr<Mouse> mouse;
   std::vector<SDL_Point> mouseASearchPath{};
   SDL_Point food;
 
